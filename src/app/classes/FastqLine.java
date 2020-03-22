@@ -5,11 +5,11 @@ package app.classes;
  */
 public class FastqLine{
     
-    String 
-        sequenceId,
-        sequence,
-        plus,
-        qualities;
+    private String 
+                sequenceId,
+                sequence,
+                plus,
+                qualities;
 
     //================================
     //  Конструкторы

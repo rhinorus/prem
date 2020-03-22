@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
  */
 public class FastqFile {
 
-    String path;
-    ArrayList<FastqLine> fastqLines;     
+    private String path;
+    private ArrayList<FastqLine> fastqLines;     
 
     //=======================
     //  Конструкторы
