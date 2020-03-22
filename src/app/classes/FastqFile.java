@@ -2,9 +2,12 @@ package app.classes;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Представление fastq файла
@@ -49,10 +52,16 @@ public class FastqFile {
     void readFile() throws Exception {
         
         fastqLines = new ArrayList<>();
+        BufferedReader reader;
 
-        File file = new File(path);
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-
+        if(path.endsWith(".gz")){
+            GZIPInputStream gzip = new GZIPInputStream(new FileInputStream(path));
+            reader = new BufferedReader(new InputStreamReader(gzip));
+        }
+        else{
+            File file = new File(path);
+            reader = new BufferedReader(new FileReader(file));
+        } 
         String line = reader.readLine();
         while(line != null) {
             fastqLines.add( 
