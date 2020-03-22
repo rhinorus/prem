@@ -8,6 +8,7 @@ public class Primer{
     private String sequence;
     private PrimerType type;
     private Primer pair;
+    private char[] sequenceChars;
 
     //==========================
     // Конструкторы
@@ -16,32 +17,37 @@ public class Primer{
     public Primer(String sequence, PrimerType type) { 
         this.sequence = sequence;
         this.type = type;
+        this.sequenceChars = sequence.toCharArray();
     }
 
     //==========================
     // Свойства
     //==========================
 
-    public String getSequence(){
+    public String getSequence() {
         return sequence;
     }
 
-    public PrimerType getType(){
+    public PrimerType getType() {
         return type;
     }
 
-    public Primer getPair(){
+    public Primer getPair() {
         return pair;
     }
 
-    public void setPair(Primer pair){
+    public void setPair(Primer pair) {
         this.pair = pair; 
+    }
+
+    public char[] getSequenceChars() {
+        return sequenceChars;
     }
 
     /**
      * Тип праймера - Прямой либо обратный.
      */
-    enum PrimerType{
+    enum PrimerType {
         Forward,
         Reverse;
 

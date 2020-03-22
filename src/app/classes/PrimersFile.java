@@ -16,6 +16,9 @@ public class PrimersFile {
     private ArrayList<Primer> 
                             forwardPrimers,
                             reversePrimers;
+    private int 
+                minPrimerLength,
+                maxPrimerLength;
 
     //==========================
     // Конструкторы
@@ -29,6 +32,7 @@ public class PrimersFile {
      */
     public PrimersFile(String path) throws Exception {
         this.path = path;
+        this.minPrimerLength = Integer.MAX_VALUE;
         readFile();
 
     }
@@ -48,10 +52,18 @@ public class PrimersFile {
     public ArrayList<Primer> getReversePrimers(){
         return reversePrimers;
     } 
- 
+  
+    public int getMinPrimerLength(){
+        return minPrimerLength;
+    }
+
+    public int getMaxPrimerLength(){
+        return maxPrimerLength;
+    }
+
     //==========================
     // Методы
-    //==========================
+     //==========================
 
     /**
      * Читает файл и строит по нему коллекции праймеров.
@@ -103,6 +115,16 @@ public class PrimersFile {
 
             forward.setPair(reverse);
             reverse.setPair(forward);
+
+            if(forward.getSequence().length() < minPrimerLength)
+                minPrimerLength = forward.getSequence().length();
+            if(reverse.getSequence().length() < minPrimerLength)
+                minPrimerLength = reverse.getSequence().length();
+
+            if(forward.getSequence().length() > maxPrimerLength)
+                maxPrimerLength = forward.getSequence().length();
+            if(reverse.getSequence().length() > maxPrimerLength)
+                maxPrimerLength = reverse.getSequence().length();
 
             forwardPrimers.add(forward);
             reversePrimers.add(reverse);

@@ -11,6 +11,9 @@ public class FastqLine{
                 plus,
                 qualities;
 
+    private char[] sequenceChars;
+    private Boolean firstPrimerFound;
+
     //================================
     //  Конструкторы
     //================================
@@ -28,6 +31,7 @@ public class FastqLine{
         this.sequence       = sequence;
         this.plus           = plus;
         this.qualities      = qualities;
+        this.sequenceChars  = sequence.toCharArray();
     }
 
     //================================
@@ -64,6 +68,18 @@ public class FastqLine{
 
     public void setQualities(String qualities){
         this.qualities = qualities;
+    }
+ 
+    public char[] getSequenceChars() {
+        return sequenceChars;
+    }
+
+    public Boolean getFirstPrimerFound(){
+        return firstPrimerFound;
+    }
+ 
+    public void setFirstPrimerFound(Boolean firstPrimerFound){
+        this.firstPrimerFound = firstPrimerFound;
     }
 
     //================================

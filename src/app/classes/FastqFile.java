@@ -15,7 +15,8 @@ import java.util.zip.GZIPInputStream;
 public class FastqFile {
 
     private String path;
-    private ArrayList<FastqLine> fastqLines;     
+    private ArrayList<FastqLine> fastqLines;   
+
 
     //=======================
     //  Конструкторы
