@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 /**
- * Представление fastq файла
+ * Representation of the .fastq file.
  */
 public class FastqFile {
 
@@ -19,12 +19,12 @@ public class FastqFile {
 
 
     //=======================
-    //  Конструкторы
+    //  Constrictors
     //=======================
         
     /**
-     * Строит объект по пути к файлу.
-     * @param path - путь к файлу
+     * Creates an object by given file path.
+     * @param path - path to .fastq or .fastq.gz file.
      */
     public FastqFile(String path) throws Exception { 
         this.path = path;
@@ -32,7 +32,7 @@ public class FastqFile {
     }
 
     //=======================
-    //  Свойства
+    //  Properties
     //=======================
 
     public String getPath(){
@@ -44,11 +44,11 @@ public class FastqFile {
     }
  
     //=======================
-    //  Методы
+    //  Other methods
     //=======================
     
     /**
-     * Производит чтение данных
+     * Reading data from file
      */
     void readFile() throws Exception {
         
@@ -72,7 +72,7 @@ public class FastqFile {
                     reader.readLine(),  // plus
                     reader.readLine())  // qualities
                 );
-            // читаем sequenceId следующей строки, если есть.
+            // if next fastq line exists, line would contains the sequenceId string.
             line = reader.readLine();
         }
 

@@ -1,7 +1,7 @@
 package app.classes;
 
 /**
- * Строка fastq файла
+ * Representation of the .fastq file line.
  */
 public class FastqLine{
     
@@ -12,30 +12,35 @@ public class FastqLine{
                 qualities;
 
     private char[] sequenceChars;
-    private Boolean firstPrimerFound;
+    private Boolean isFirstPrimerFound;
 
     //================================
-    //  Конструкторы
+    //  Constructors
     //================================
 
     /**
-     * Создание объекта на основе 4-х строк, представляющих одну запись в fastq файле.
+     * Creates an object, which includes four inform lines.
+     * <p> First line - sequenceId </p>
+     * <p> Second - read sequence </p>
+     * <p> Third - string, usually contains only '+' symbol. </p>
+     * <p> Fourth - read qualities </p>
      * 
-     * @param sequenceId    - строковый идентификатор последовательности
-     * @param sequence      - последовательность
-     * @param plus          - строка, содержащая '+'
-     * @param qualities     - строка, содержащая информацию о качестве чтения 
+     * @param sequenceId    - string sequence id
+     * @param sequence      - read sequence
+     * @param plus          - string, which usually contains only '+' symbol. 
+     * @param qualities     - read qualities
      */
     public FastqLine(String sequenceId, String sequence, String plus, String qualities){
-        this.sequenceId     = sequenceId;
-        this.sequence       = sequence;
-        this.plus           = plus;
-        this.qualities      = qualities;
-        this.sequenceChars  = sequence.toCharArray();
+        this.sequenceId         = sequenceId;
+        this.sequence           = sequence;
+        this.plus               = plus;
+        this.qualities          = qualities;
+        this.sequenceChars      = sequence.toCharArray();
+        this.isFirstPrimerFound = false; 
     }
 
     //================================
-    //  Свойства
+    //  Properties
     //================================
  
     public String getSequenceId(){
@@ -74,16 +79,16 @@ public class FastqLine{
         return sequenceChars;
     }
 
-    public Boolean getFirstPrimerFound(){
-        return firstPrimerFound;
+    public Boolean getIsFirstPrimerFound(){
+        return isFirstPrimerFound;
     }
  
-    public void setFirstPrimerFound(Boolean firstPrimerFound){
-        this.firstPrimerFound = firstPrimerFound;
+    public void setIsFirstPrimerFound(Boolean isFirstPrimerFound){
+        this.isFirstPrimerFound = isFirstPrimerFound;
     }
 
     //================================
-    //  Методы
+    //  Other methods
     //================================
 
     @Override

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import app.classes.Primer.PrimerType;
 
 /**
- * Представление файла праймеров в .csv формате
+ * Representation of the primers .csv file.
  */
 public class PrimersFile {
 
@@ -21,13 +21,13 @@ public class PrimersFile {
                 maxPrimerLength;
 
     //==========================
-    // Конструкторы
+    // Constructors
     //==========================
 
     /**
-     * Строит объект по пути к файлу.
+     * Creates object by .csv file path.
      * 
-     * @param path - путь к .csv файлу с праймерами
+     * @param path - path to primers .csv file.
      * @throws Exception
      */
     public PrimersFile(String path) throws Exception {
@@ -38,7 +38,7 @@ public class PrimersFile {
     }
 
     //==========================
-    // Свойства
+    // Properties
     //==========================
  
     public String getPath(){
@@ -62,11 +62,11 @@ public class PrimersFile {
     }
 
     //==========================
-    // Методы
+    // Other methods
      //==========================
 
     /**
-     * Читает файл и строит по нему коллекции праймеров.
+     * Builds a collection from file.
      */
     void readFile() throws Exception {
         forwardPrimers = new ArrayList<>();
@@ -139,7 +139,7 @@ public class PrimersFile {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         
-        // заголовок
+        // header
         builder.append("Forward,Reverse\n");
 
         for(int i = 0; i < forwardPrimers.size(); i++)

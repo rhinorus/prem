@@ -1,14 +1,14 @@
 package app.classes;
 
 /**
- * Предоставляет доступ к биоинформатическим методам.
+ * Provides access to bioinformatics methods.
  */
 public abstract class BioTools{
 
     /**
-     * Возвращает последовательность, комплиментарную данной.
-     * @param sequence - исходная последовательность
-     * @return 
+     * Makes compimentary sequence.
+     * @param sequence - source sequence
+     * @return - complimentary sequence
      */
     public String getComplimentarySequence(String sequence){
         StringBuilder builder = new StringBuilder();

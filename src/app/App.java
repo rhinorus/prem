@@ -12,71 +12,140 @@ import app.classes.FastqFile;
 import app.classes.FastqLine;
 import app.classes.Primer;
 import app.classes.PrimersFile;
-
+ 
 public class App {
-
-    private static final DateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+ 
+    static final DateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+    static final Integer    DEFAULT_KMER_SIZE = 12;
  
     static String FASTQ_FILE_PATH   = "test/IonXpress_047.fastq.gz";  
     static String PRIMERS_FILE_PATH = "test/primers.csv";
 
-    static HashMap<String, Set<FastqLine>> readsIndex; 
-    static HashMap<String, Set<Primer>> primersIndex; 
+    static HashMap<String, Set<FastqLine>>              readsIndex; 
+    static HashMap<String, Set<Primer>>                 primersIndex; 
     static HashMap<FastqLine, HashMap<Primer, Integer>> candidates;  
 
+
+
     public static void main(String[] args) throws Exception { 
-        printLog("Начало работы.");
+        printLog("PREM started.");
 
-        printLog("Чтение файла праймеров.");
+        printLog("Reading primers file.");
         PrimersFile primersFile = new PrimersFile(PRIMERS_FILE_PATH);
-        System.out.println("Минимальная длина праймера: " + primersFile.getMinPrimerLength() + ", максимальная: " + primersFile.getMaxPrimerLength());
-        printLog("Чтение завершено.");
+        printLog("Min primer length: \t"   + primersFile.getMinPrimerLength());
+        printLog("Max primer length: \t"  + primersFile.getMaxPrimerLength());
+        printLog("Total pairs: \t\t"      + primersFile.getForwardPrimers().size());
+        printLog("done.");
 
-        printLog("Построение индекса по праймерам.");
-        buildKmerIndex(13, primersFile.getForwardPrimers());
-        buildKmerIndex(13, primersFile.getReversePrimers()); 
-        printLog("Завершено построение индекса.");
+        printLog("Indexing primers.");
+        buildKmerIndex(DEFAULT_KMER_SIZE, primersFile.getForwardPrimers());
+        buildKmerIndex(DEFAULT_KMER_SIZE, primersFile.getReversePrimers()); 
+        printLog("done.");
  
-        printLog("Чтение fastq файла.");
+        printLog("Reading .fastq file.");
         FastqFile fastqFile = new FastqFile(FASTQ_FILE_PATH);
-        printLog("Чтение завершено.");
+        printLog("done.");
 
-        printLog("Предварительный поиск первого праймера");
+        printLog("Searching for forward primer.");
+        buildReadsFirstPrimerIndex(primersFile.getMinPrimerLength(), fastqFile.getFastqLines());
+        lookForFirstPrimer(primersFile.getMinPrimerLength(), primersFile.getForwardPrimers());
+        lookForFirstPrimer(primersFile.getMinPrimerLength(), primersFile.getReversePrimers());
+        printLog("done.");
+ 
+        printLog("Searching for forward primer by indexed k-mer's."); 
+        candidatesSelection(DEFAULT_KMER_SIZE, fastqFile.getFastqLines(), primersFile.getMaxPrimerLength());
+        printLog("done..");
         
-        printLog("Предварительный поиск завершен");
-
-        printLog("Подбор наиболее вероятных праймеров для ридов."); 
-        candidatesSelection(13, fastqFile.getFastqLines(), primersFile.getMaxPrimerLength());
-        printLog("Подбор завершен.");
-
-        printLog("Информация о подборе:");
-
         int 
             zero = 0, 
             one = 0,
             moreThanOne = 0,
+            firstFound = 0,
             ttl = fastqFile.getFastqLines().size();
 
         for(FastqLine read : fastqFile.getFastqLines()){
-            int size = candidates.get(read).size();
+            // Если рида нет в перечислении, то первый праймер уже был найден.
+            int size = 1; 
+
+            if(candidates.containsKey(read))
+                size = candidates.get(read).size();
+
+
+            if(read.getIsFirstPrimerFound())
+                firstFound++;
+
             if(size == 0)
                 zero++;
-            else if(size == 1)
+            else if(size == 1 || read.getIsFirstPrimerFound()) 
                 one++;
             else
                 moreThanOne++;
         }
 
+        printLog("Stats:");
         System.out.println("=====================");
         System.out.println("Total reads: " + ttl);
-        System.out.println("Zero: "     + zero          + " (" + (zero          / (double)ttl * 100.0) + "%)");
-        System.out.println("One: "      + one           + " (" + (one           / (double)ttl * 100.0) + "%)");
-        System.out.println("Two+: "     + moreThanOne   + " (" + (moreThanOne   / (double)ttl * 100.0) + "%)");
+        System.out.println("Zero: "         + zero          + " (" + (zero          / (double)ttl * 100.0) + "%)");
+        System.out.println("One: "          + one           + " (" + (one           / (double)ttl * 100.0) + "%)");
+        System.out.println("firstFound: "   + firstFound    + " (" + (firstFound    / (double)ttl * 100.0) + "%)");
+        System.out.println("Two+: "         + moreThanOne   + " (" + (moreThanOne   / (double)ttl * 100.0) + "%)");
         System.out.println("=====================");
 
 
-        printLog("Завершение работы.");
+        printLog("Trimming done.");
     }  
+
+    /**
+     * Строит индекс ридов для быстрого поиска первого праймера.
+     * @param size - минимальная длина используемого праймера
+     * @param reads - прочтения
+     */
+    private static void buildReadsFirstPrimerIndex(Integer size, ArrayList<FastqLine> reads){
+        if(readsIndex == null)
+            readsIndex = new HashMap<>();
+
+        for(FastqLine read : reads){
+            StringBuilder builder = new StringBuilder();
+
+            for(int i = 0; i < size; i++)
+                builder.append(read.getSequenceChars()[i]);
+
+            String index = builder.toString();
+            
+            if(readsIndex.containsKey(index)){
+                readsIndex.get(index).add(read);
+            }
+            else{
+                Set<FastqLine> lines = new HashSet<>();
+                lines.add(read);
+
+                readsIndex.put(index, lines);
+            }
+        }
+    }
+
+    /**
+     * Помечает риды, для которых был найден первый праймер.
+     * @param size - минимальная длина праймера.
+     * @param primers - коллекция праймеров.
+     */
+    private static void lookForFirstPrimer(Integer size, ArrayList<Primer> primers) {
+        for(Primer primer : primers){
+            StringBuilder builder = new StringBuilder();
+
+            for(int i = 0; i < size; i++)
+                builder.append(primer.getSequenceChars()[i]);
+
+            String index = builder.toString();
+
+            if(readsIndex.containsKey(index)){
+                for(FastqLine read : readsIndex.get(index)){
+                    read.setIsFirstPrimerFound(true);
+                }
+            }
+
+        }
+    }
 
     /**
      * Добавляет в HashMap индексы праймеров по k-mer'ам указанного размера.
@@ -106,7 +175,7 @@ public class App {
             }
         }
     } 
-  
+   
     /**
      * Осуществляет подбор праймеров-кандидатов для каждого прочтения.
      * @param kmerSize - длина k-mer'a
@@ -118,6 +187,9 @@ public class App {
             candidates = new HashMap<>();  
 
         for(FastqLine read : reads){
+
+            if(read.getIsFirstPrimerFound())
+                continue;
 
             HashMap<Primer, Integer> readCandidates;
             
@@ -150,7 +222,7 @@ public class App {
             }
         }
     }
-
+ 
     /**
      * Пишет в консоль сообщение с указанием времени.
      */
@@ -158,4 +230,4 @@ public class App {
         String time = sdf.format(new Date());
         System.out.println(time + ": " + message);
     }
-}    
+}     

@@ -1,7 +1,7 @@
 package app.classes;
 
 /**
- * Представление праймера, который может быть обнаружен в прочтении.
+ * Representation of the primer, which could be found in the read sequence.
  */
 public class PrimerCandidate{
 
@@ -9,19 +9,19 @@ public class PrimerCandidate{
     private int count;
 
     //=========================
-    // Конструкторы
+    // Constructors
     //=========================
 
     /**
-     * Создает кандидата по праймеру.
-     * @param primer - праймер.
+     * Creates a primer candidate.
+     * @param primer
      */
     public PrimerCandidate(Primer primer){
         this.primer = primer;
     }
 
     //=========================
-    // Свойства
+    // Properties
     //=========================
 
     public Primer getPrimer(){
@@ -33,12 +33,9 @@ public class PrimerCandidate{
     }
 
     //=========================
-    // Методы
+    // Other methods
     //=========================
-
-    /**
-     * Увеличивает счетчик появлений на единицу.
-     */
+ 
     public void incrementCount(){
         count++;
     }

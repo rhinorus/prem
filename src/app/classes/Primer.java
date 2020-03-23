@@ -1,7 +1,7 @@
 package app.classes;
 
 /**
- * Представление праймера.
+ * Representation of the primer.
  */
 public class Primer{
 
@@ -11,9 +11,15 @@ public class Primer{
     private char[] sequenceChars;
 
     //==========================
-    // Конструкторы
+    // Constructors
     //==========================
 
+    /**
+     * Creates an object by primer sequence and direction type.
+     * 
+     * @param sequence - primer sequence
+     * @param type - primer direction type. (Forward or Reverse)
+     */
     public Primer(String sequence, PrimerType type) { 
         this.sequence = sequence;
         this.type = type;
@@ -21,7 +27,7 @@ public class Primer{
     }
 
     //==========================
-    // Свойства
+    // Properties
     //==========================
 
     public String getSequence() {
@@ -45,7 +51,7 @@ public class Primer{
     }
 
     /**
-     * Тип праймера - Прямой либо обратный.
+     * The primer direction type - Forward or Reverse.
      */
     enum PrimerType {
         Forward,
