@@ -14,10 +14,18 @@ public class FastqLine{
     private char[] sequenceChars;
     private Boolean isFirstPrimerFound;
 
+    private Primer 
+                forwardPrimer,
+                reversePrimer;
+
+    private Integer
+                forwardPrimerPosition,
+                reversePrimerPosition; 
+
     //================================
     //  Constructors
     //================================
-
+ 
     /**
      * Creates an object, which includes four inform lines.
      * <p> First line - sequenceId </p>
@@ -85,6 +93,39 @@ public class FastqLine{
  
     public void setIsFirstPrimerFound(Boolean isFirstPrimerFound){
         this.isFirstPrimerFound = isFirstPrimerFound;
+    }
+
+    public Primer getForwardPrimer(){
+        return forwardPrimer;
+    }
+ 
+    public void setForwardPrimer(Primer forwardPrimer){
+        this.forwardPrimer = forwardPrimer;
+        this.reversePrimer = forwardPrimer.getPair();
+    }
+
+    public Primer getReversePrimer(){
+        return reversePrimer;
+    }
+
+    public void setReversePrimer(Primer reversePrimer){
+        this.reversePrimer = reversePrimer;
+    }
+
+    public Integer getForwardPrimerPosition(){
+        return forwardPrimerPosition;
+    }
+
+    public void setForwardPrimerPosition(Integer forwardPrimerPosition){
+        this.forwardPrimerPosition = forwardPrimerPosition;
+    }
+
+    public Integer getReversePrimerPosition(){
+        return reversePrimerPosition;
+    }
+
+    public void setReversePrimerPosition(Integer reversePrimerPosition){
+        this.reversePrimerPosition = reversePrimerPosition;
     }
 
     //================================

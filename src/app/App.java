@@ -25,8 +25,6 @@ public class App {
     static HashMap<String, Set<Primer>>                 primersIndex; 
     static HashMap<FastqLine, HashMap<Primer, Integer>> candidates;  
 
-
-
     public static void main(String[] args) throws Exception { 
         printLog("PREM started.");
 
@@ -55,7 +53,35 @@ public class App {
         printLog("Searching for forward primer by indexed k-mer's."); 
         candidatesSelection(DEFAULT_KMER_SIZE, fastqFile.getFastqLines(), primersFile.getMaxPrimerLength());
         printLog("done..");
-        
+
+        printLog("Setting known forward primers");
+        ArrayList<FastqLine> 
+                        zeroPrimersReads = new ArrayList<>(),
+                        moreThanOnePrimersReads = new ArrayList<>();
+
+        for(FastqLine read : fastqFile.getFastqLines()){
+            int numberOfPrimers = 1;
+
+            if(candidates.containsKey(read)){
+                numberOfPrimers = candidates.get(read).size();
+
+                switch(numberOfPrimers){
+                    case 0:
+                        zeroPrimersReads.add(read); 
+                        break;
+                    case 1: 
+                        for(Primer primer : candidates.get(read).keySet()) // always one entry in collection. But I don't know how to access it by index :)
+                            read.setForwardPrimer(primer);
+                        break;
+                    default:
+                        moreThanOnePrimersReads.add(read);
+                        break;
+                }
+            }
+        }
+
+        printLog("done."); 
+
         int 
             zero = 0, 
             one = 0,
@@ -96,9 +122,9 @@ public class App {
     }  
 
     /**
-     * Строит индекс ридов для быстрого поиска первого праймера.
-     * @param size - минимальная длина используемого праймера
-     * @param reads - прочтения
+     * Indexing reads for quick forward primer selection.
+     * @param size - min primer length.
+     * @param reads
      */
     private static void buildReadsFirstPrimerIndex(Integer size, ArrayList<FastqLine> reads){
         if(readsIndex == null)
@@ -125,9 +151,9 @@ public class App {
     }
 
     /**
-     * Помечает риды, для которых был найден первый праймер.
-     * @param size - минимальная длина праймера.
-     * @param primers - коллекция праймеров.
+     * Marks reads, which has forward primer.
+     * @param size - min primer length.
+     * @param primers
      */
     private static void lookForFirstPrimer(Integer size, ArrayList<Primer> primers) {
         for(Primer primer : primers){
@@ -141,6 +167,7 @@ public class App {
             if(readsIndex.containsKey(index)){
                 for(FastqLine read : readsIndex.get(index)){
                     read.setIsFirstPrimerFound(true);
+                    read.setForwardPrimer(primer);
                 }
             }
 
@@ -148,7 +175,7 @@ public class App {
     }
 
     /**
-     * Добавляет в HashMap индексы праймеров по k-mer'ам указанного размера.
+     * Indexes primers by given k-mer length.
      */
     private static void buildKmerIndex(Integer kmerSize, ArrayList<Primer> primers){
         if(primersIndex == null)
@@ -175,12 +202,12 @@ public class App {
             }
         }
     } 
-   
+    
     /**
-     * Осуществляет подбор праймеров-кандидатов для каждого прочтения.
-     * @param kmerSize - длина k-mer'a
-     * @param reads - коллекция прочтений.
-     * @param length - максимальная длина праймера.
+     * Candidates selection for each read.
+     * @param kmerSize - k-mer length.
+     * @param reads
+     * @param length - max primer length.
      */
     private static void candidatesSelection(Integer kmerSize, ArrayList<FastqLine> reads, Integer length){
         if(candidates == null)
@@ -224,10 +251,10 @@ public class App {
     }
  
     /**
-     * Пишет в консоль сообщение с указанием времени.
+     * Logs message with timestamp.
      */
     private static void printLog(String message){
         String time = sdf.format(new Date());
         System.out.println(time + ": " + message);
     }
-}     
+}      
