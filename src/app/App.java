@@ -10,8 +10,10 @@ import java.util.Set;
 
 import app.classes.FastqFile;
 import app.classes.FastqLine;
+import app.classes.KmerOffset;
 import app.classes.Primer;
 import app.classes.PrimersFile;
+import app.classes.ReadOffset;
  
 public class App {
  
@@ -22,8 +24,8 @@ public class App {
     static String PRIMERS_FILE_PATH = "test/primers.csv";
 
     static HashMap<String, Set<FastqLine>>              readsIndex; 
-    static HashMap<String, Set<Primer>>                 primersIndex; 
-    static HashMap<FastqLine, HashMap<Primer, Integer>> candidates;  
+    static HashMap<String, Set<KmerOffset>>                 primersIndex; 
+    static HashMap<FastqLine, HashMap<ReadOffset, Integer>> candidates;  
 
     public static void main(String[] args) throws Exception { 
         printLog("PREM started.");
@@ -55,6 +57,7 @@ public class App {
         printLog("done..");
 
         printLog("Setting known forward primers");
+
         ArrayList<FastqLine> 
                         zeroPrimersReads = new ArrayList<>(),
                         moreThanOnePrimersReads = new ArrayList<>();
@@ -70,8 +73,14 @@ public class App {
                         zeroPrimersReads.add(read); 
                         break;
                     case 1: 
-                        for(Primer primer : candidates.get(read).keySet()) // always one entry in collection. But I don't know how to access it by index :)
-                            read.setForwardPrimer(primer);
+                        for(ReadOffset readOffset : candidates.get(read).keySet()) { // always one entry in collection. But I don't know how to access it by index :)
+                            read.setForwardPrimer(readOffset.getKmerOffset().getPrimer());
+                            Integer totalOffset = 
+                                                readOffset.getOffset()                                          + 
+                                                readOffset.getKmerOffset().getPrimer().getSequence().length()   -
+                                                readOffset.getKmerOffset().getOffset()                          - 1;
+                            read.setForwardPrimerEndPosition(totalOffset);  
+                         } 
                         break;
                     default:
                         moreThanOnePrimersReads.add(read);
@@ -80,45 +89,31 @@ public class App {
             }
         }
 
-        printLog("done."); 
+        printLog("done.");  
+
+        // Тут надо донайти первый праймер там, где он не нашелся. Можно попробовать сделать размер k-mer'a поменьше. Скажем, до 8. 
+        //Если не найдется, то ошибок слишком много. 
+
+        //#region Debug статистика
 
         int 
-            zero = 0, 
-            one = 0,
-            moreThanOne = 0,
-            firstFound = 0,
-            ttl = fastqFile.getFastqLines().size();
-
-        for(FastqLine read : fastqFile.getFastqLines()){
-            // Если рида нет в перечислении, то первый праймер уже был найден.
-            int size = 1; 
-
-            if(candidates.containsKey(read))
-                size = candidates.get(read).size();
-
-
-            if(read.getIsFirstPrimerFound())
-                firstFound++;
-
-            if(size == 0)
-                zero++;
-            else if(size == 1 || read.getIsFirstPrimerFound()) 
-                one++;
-            else
-                moreThanOne++;
-        }
+            zero = zeroPrimersReads.size(), 
+            moreThanOne = moreThanOnePrimersReads.size(),
+            ttl = fastqFile.getFastqLines().size(),
+            one = ttl - zero - moreThanOne;
 
         printLog("Stats:");
         System.out.println("=====================");
         System.out.println("Total reads: " + ttl);
         System.out.println("Zero: "         + zero          + " (" + (zero          / (double)ttl * 100.0) + "%)");
         System.out.println("One: "          + one           + " (" + (one           / (double)ttl * 100.0) + "%)");
-        System.out.println("firstFound: "   + firstFound    + " (" + (firstFound    / (double)ttl * 100.0) + "%)");
         System.out.println("Two+: "         + moreThanOne   + " (" + (moreThanOne   / (double)ttl * 100.0) + "%)");
         System.out.println("=====================");
 
 
         printLog("Trimming done.");
+
+        //#endregion
     }  
 
     /**
@@ -168,12 +163,13 @@ public class App {
                 for(FastqLine read : readsIndex.get(index)){
                     read.setIsFirstPrimerFound(true);
                     read.setForwardPrimer(primer);
+                    read.setForwardPrimerEndPosition(primer.getSequence().length() - 1); 
                 }
             }
 
         }
     }
-
+  
     /**
      * Indexes primers by given k-mer length.
      */
@@ -191,11 +187,11 @@ public class App {
                 String kmer = kmerBuilder.toString(); 
 
                 if(primersIndex.containsKey(kmer)){
-                    primersIndex.get(kmer).add(primer);
+                    primersIndex.get(kmer).add(new KmerOffset(i, primer)); 
                 }  
                 else{
-                    Set<Primer> primersSet = new HashSet<>();
-                    primersSet.add(primer);
+                    Set<KmerOffset> primersSet = new HashSet<>();
+                    primersSet.add(new KmerOffset(i, primer));
 
                     primersIndex.put(kmer, primersSet);
                 }
@@ -218,7 +214,7 @@ public class App {
             if(read.getIsFirstPrimerFound())
                 continue;
 
-            HashMap<Primer, Integer> readCandidates;
+            HashMap<ReadOffset, Integer> readCandidates; 
             
             if(candidates.containsKey(read)){
                 readCandidates = candidates.get(read);
@@ -235,21 +231,28 @@ public class App {
 
                 if(!primersIndex.containsKey(kmerBuilder.toString()))
                     continue; 
+                
+                Set<KmerOffset> currentCandidates = primersIndex.get(kmerBuilder.toString());
 
-                Set<Primer> currentCandidates = primersIndex.get(kmerBuilder.toString());
-
-                for(Primer candidate : currentCandidates){
-                    Integer value = 0;
-
-                    if(readCandidates.containsKey(candidate))
-                        value = readCandidates.get(candidate);
-                    
-                    readCandidates.put(candidate, value + 1);
+                for(KmerOffset candidate : currentCandidates){
+                    Integer value = 0; 
+                    ReadOffset foundedReadOffset = null;
+ 
+                    for(ReadOffset key : readCandidates.keySet()){
+                        if(key.getKmerOffset().getPrimer().getSequence().equals(candidate.getPrimer().getSequence())){ 
+                            foundedReadOffset = key;
+                            value = readCandidates.get(key);
+                        }
+                    }
+                    if(foundedReadOffset != null)
+                        readCandidates.put(foundedReadOffset, value + 1);
+                    else
+                        readCandidates.put(new ReadOffset(i, candidate), value + 1 );
                 }
             }
         }
     }
- 
+  
     /**
      * Logs message with timestamp.
      */

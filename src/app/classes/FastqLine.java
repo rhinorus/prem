@@ -19,8 +19,8 @@ public class FastqLine{
                 reversePrimer;
 
     private Integer
-                forwardPrimerPosition,
-                reversePrimerPosition; 
+                forwardPrimerEndPosition,
+                reversePrimerStartPosition; 
 
     //================================
     //  Constructors
@@ -112,20 +112,20 @@ public class FastqLine{
         this.reversePrimer = reversePrimer;
     }
 
-    public Integer getForwardPrimerPosition(){
-        return forwardPrimerPosition;
+    public Integer getForwardPrimerEndPosition(){
+        return forwardPrimerEndPosition;
     }
 
-    public void setForwardPrimerPosition(Integer forwardPrimerPosition){
-        this.forwardPrimerPosition = forwardPrimerPosition;
+    public void setForwardPrimerEndPosition(Integer forwardPrimerEndPosition){
+        this.forwardPrimerEndPosition = forwardPrimerEndPosition;
     }
 
-    public Integer getReversePrimerPosition(){
-        return reversePrimerPosition;
+    public Integer getReversePrimerStartPosition(){
+        return reversePrimerStartPosition;
     }
 
-    public void setReversePrimerPosition(Integer reversePrimerPosition){
-        this.reversePrimerPosition = reversePrimerPosition;
+    public void setReversePrimerStartPosition(Integer reversePrimerStartPosition){
+        this.reversePrimerStartPosition = reversePrimerStartPosition;
     }
 
     //================================
