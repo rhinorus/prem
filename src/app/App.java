@@ -19,6 +19,8 @@ public class App {
  
     static final DateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
     static final Integer    DEFAULT_KMER_SIZE = 12;
+
+    static final boolean    DEBUG_MODE = true;
  
     static String FASTQ_FILE_PATH   = "test/IonXpress_047.fastq.gz";  
     static String PRIMERS_FILE_PATH = "test/primers.csv";
@@ -56,64 +58,39 @@ public class App {
         candidatesSelection(DEFAULT_KMER_SIZE, fastqFile.getFastqLines(), primersFile.getMaxPrimerLength());
         printLog("done..");
 
-        printLog("Setting known forward primers");
+        ArrayList<FastqLine> zeroPrimersReads = setForwardReadAndGetZeroCandidateReads(fastqFile.getFastqLines());
 
-        ArrayList<FastqLine> 
-                        zeroPrimersReads = new ArrayList<>(),
-                        moreThanOnePrimersReads = new ArrayList<>();
-
-        for(FastqLine read : fastqFile.getFastqLines()){
-            int numberOfPrimers = 1;
-
-            if(candidates.containsKey(read)){
-                numberOfPrimers = candidates.get(read).size();
-
-                switch(numberOfPrimers){
-                    case 0:
-                        zeroPrimersReads.add(read); 
-                        break;
-                    case 1: 
-                        for(ReadOffset readOffset : candidates.get(read).keySet()) { // always one entry in collection. But I don't know how to access it by index :)
-                            read.setForwardPrimer(readOffset.getKmerOffset().getPrimer());
-                            Integer totalOffset = 
-                                                readOffset.getOffset()                                          + 
-                                                readOffset.getKmerOffset().getPrimer().getSequence().length()   -
-                                                readOffset.getKmerOffset().getOffset()                          - 1;
-                            read.setForwardPrimerEndPosition(totalOffset);  
-                         } 
-                        break;
-                    default:
-                        moreThanOnePrimersReads.add(read);
-                        break;
-                }
+        if(zeroPrimersReads.size() > 0){
+            printLog("Starting deep forward primer search.");
+            Integer kmerSize = DEFAULT_KMER_SIZE - 1;
+    
+            while(kmerSize > 8 && zeroPrimersReads.size() > 0){
+                buildKmerIndex(kmerSize, primersFile.getForwardPrimers());
+                buildKmerIndex(kmerSize, primersFile.getReversePrimers());
+    
+                candidatesSelection(kmerSize, zeroPrimersReads, primersFile.getMaxPrimerLength());
+    
+                zeroPrimersReads = setForwardReadAndGetZeroCandidateReads(zeroPrimersReads); 
+                kmerSize--;
             }
+            printLog("done.");
         }
+ 
+        // That means, what zeroPrimerReads contains >3 errors at start position.
+        if(zeroPrimersReads.size() > 0){
+            printLog("Detected " + zeroPrimersReads.size() + " low-quality reads. They will be removed.");
+            for(FastqLine read : zeroPrimersReads) // twice faster, than removeAll() function
+                fastqFile.getFastqLines().remove(read); 
+            printLog("done.");
+        } 
+        
+        // реализовать алгоритм Дамерау-Левенштейна, откорректировать веса. 
+        // алгоритм нужен для поиска первого праймера у ридов, для которых
+        // было определено более одного кандидата.
 
-        printLog("done.");  
+        printLog("Filtering forward-primer candidates.");
 
-        // Тут надо донайти первый праймер там, где он не нашелся. Можно попробовать сделать размер k-mer'a поменьше. Скажем, до 8. 
-        //Если не найдется, то ошибок слишком много. 
-
-        //#region Debug статистика
-
-        int 
-            zero = zeroPrimersReads.size(), 
-            moreThanOne = moreThanOnePrimersReads.size(),
-            ttl = fastqFile.getFastqLines().size(),
-            one = ttl - zero - moreThanOne;
-
-        printLog("Stats:");
-        System.out.println("=====================");
-        System.out.println("Total reads: " + ttl);
-        System.out.println("Zero: "         + zero          + " (" + (zero          / (double)ttl * 100.0) + "%)");
-        System.out.println("One: "          + one           + " (" + (one           / (double)ttl * 100.0) + "%)");
-        System.out.println("Two+: "         + moreThanOne   + " (" + (moreThanOne   / (double)ttl * 100.0) + "%)");
-        System.out.println("=====================");
-
-
-        printLog("Trimming done.");
-
-        //#endregion
+        printLog("done");
     }  
 
     /**
@@ -169,7 +146,7 @@ public class App {
 
         }
     }
-  
+
     /**
      * Indexes primers by given k-mer length.
      */
@@ -254,10 +231,52 @@ public class App {
     }
   
     /**
+     * Setting ForwardPrimer for reads, searching reads without any forward primer.
+     * @param reads - reads to be processed.
+     * @return a collection of reads without primer-candidates.
+     */
+    private static ArrayList<FastqLine> setForwardReadAndGetZeroCandidateReads(ArrayList<FastqLine> reads){
+        
+        ArrayList<FastqLine> zeroPrimersReads = new ArrayList<>();
+
+        for(FastqLine read : reads){
+            int numberOfPrimers = 1;
+
+            if(candidates.containsKey(read)){
+                numberOfPrimers = candidates.get(read).size();
+
+                switch(numberOfPrimers){
+                    case 0:
+                        zeroPrimersReads.add(read); 
+                        break;
+                    case 1: 
+                        if(read.getForwardPrimer() == null){
+                            for(ReadOffset readOffset : candidates.get(read).keySet()) { // always one entry in collection. But I don't know how to access it by index :)
+                            read.setForwardPrimer(readOffset.getKmerOffset().getPrimer());
+                            Integer totalOffset = 
+                                                readOffset.getOffset()                                          + 
+                                                readOffset.getKmerOffset().getPrimer().getSequence().length()   -
+                                                readOffset.getKmerOffset().getOffset()                          - 1;
+                            read.setForwardPrimerEndPosition(totalOffset);  
+                        } 
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        return zeroPrimersReads;
+    }
+
+    /**
      * Logs message with timestamp.
      */
     private static void printLog(String message){
-        String time = sdf.format(new Date());
-        System.out.println(time + ": " + message);
+        if(DEBUG_MODE){
+            String time = sdf.format(new Date());
+            System.out.println(time + ": " + message);
+        }
     }
-}      
+}       
