@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import app.classes.DistanceMetrics;
 import app.classes.FastqFile;
 import app.classes.FastqLine;
 import app.classes.KmerOffset;
@@ -83,11 +84,11 @@ public class App {
                 fastqFile.getFastqLines().remove(read); 
             printLog("done.");
         } 
-        
-        // реализовать алгоритм Дамерау-Левенштейна, откорректировать веса. 
+         
+        // Коррекция весов Дамерау-Левенштейна. Нулевая цена вставки в маску спереди и сзади. 
         // алгоритм нужен для поиска первого праймера у ридов, для которых
         // было определено более одного кандидата.
-
+ 
         printLog("Filtering forward-primer candidates.");
 
         printLog("done");
@@ -271,6 +272,52 @@ public class App {
     }
 
     /**
+     * Returns Damerau-Levenstein distance.
+     * @param mask
+     * @param sequence
+     * @return
+     */
+    private static Integer getDamerauLevenshteinDistance(String mask, String sequence){
+
+        int 
+            n = mask.length() + 1,
+            m = sequence.length() + 1;
+
+        char[]
+            maskChars       = mask.toCharArray(),
+            sequenseChars   = sequence.toCharArray();
+
+        int[][] matrix = new int[n][m];
+        
+        for(int i = 0; i < n; i++) // first row
+            matrix[i][0] = i;
+        for(int i = 1; i < m; i++) // first column
+            matrix[0][i] = i;
+ 
+        for(int i = 1; i < n; i++){
+            for(int j = 1; j < m; j++){
+                int replacementPayment = maskChars[i - 1] == sequenseChars[j - 1] ? 0 : DistanceMetrics.Replacement.getValue();
+
+                int 
+                    insertion   = matrix[i][j - 1]      + DistanceMetrics.Insertion.getValue(),
+                    deletion    = matrix[i - 1][j]      + DistanceMetrics.Deletion.getValue(),
+                    replacement = matrix[i - 1][j - 1]  + replacementPayment;
+
+                matrix[i][j] = getMinOfThree(insertion, deletion, replacement);
+            }
+        }
+
+        return matrix[n - 1][m - 1]; 
+    }
+
+    /**
+     * Returns minimum of three integer numbers.
+     */
+    private static int getMinOfThree(int x, int y, int z){
+        return x < y ? (x < z ? x : z) : y < z ? y : z;
+    }
+
+    /**
      * Logs message with timestamp.
      */
     private static void printLog(String message){
@@ -279,4 +326,4 @@ public class App {
             System.out.println(time + ": " + message);
         }
     }
-}       
+}         
